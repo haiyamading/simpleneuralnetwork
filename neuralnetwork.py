@@ -1,6 +1,7 @@
 # python notebook for Make Your Own Neural Network
 # code for a 3-layer neural network, and code for learning the MNIST dataset
 # (c) Tariq Rashid, 2016
+# (c) Martin Haag, 2017
 # license is GPLv2
 
 import numpy
@@ -14,7 +15,7 @@ activation_function = lambda x: sigmoid(x)
 
 
 # neural network class definition
-class neuralNetwork:
+class NeuralNetwork:
     # initialise the neural network
     def __init__(self):
         self.inodes = None
@@ -24,8 +25,21 @@ class neuralNetwork:
         self.who = None
         self.lr = None
 
+    def store(self, fname):
+        with open(fname, "wb") as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
-    def create(self, inputnodes, hiddennodes, outputnodes, learningrate):
+    def load(self, fname):
+        with open(fname, "rb") as f:
+            dump = pickle.load(f)
+            self.inodes = dump.inodes
+            self.hnodes = dump.hnodes
+            self.onodes = dump.onodes
+            self.wih    = dump.wih
+            self.who    = dump.who
+            self.lr     = dump.lr
+
+    def setup(self, inputnodes, hiddennodes, outputnodes, learningrate):
         # set number of nodes in each input, hidden, output layer
         self.inodes = inputnodes
         self.hnodes = hiddennodes
@@ -92,101 +106,4 @@ class neuralNetwork:
         final_outputs = activation_function(final_inputs)
 
         return final_outputs
-
-    def store(self, fname):
-        with open(fname, "wb") as f:
-            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
-
-    def load(self, fname):
-        with open(fname, "rb") as f:
-            dump = pickle.load(f)
-            self.inodes = dump.inodes
-            self.hnodes = dump.hnodes
-            self.onodes = dump.onodes
-            self.wih    = dump.wih
-            self.who    = dump.who
-            self.lr     = dump.lr
-
-
-# number of input, hidden and output nodes
-input_nodes = 784
-hidden_nodes = 200
-output_nodes = 10
-
-# learning rate
-learning_rate = 0.1
-
-# create instance of neural network
-n = neuralNetwork()
-n.create(input_nodes, hidden_nodes, output_nodes, learning_rate)
-
-# load the mnist training data CSV file into a list
-training_data_file = open("mnist_dataset/mnist_train_100.csv", 'r')
-training_data_list = training_data_file.readlines()
-training_data_file.close()
-
-# train the neural network
-
-# epochs is the number of times the training data set is used for training
-epochs = 5
-
-for e in range(epochs):
-    # go through all records in the training data set
-    for record in training_data_list:
-        # split the record by the ',' commas
-        all_values = record.split(',')
-        # scale and shift the inputs
-        inputs = (numpy.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
-        # create the target output values (all 0.01, except the desired label which is 0.99)
-        targets = numpy.zeros(output_nodes) + 0.01
-        # all_values[0] is the target label for this record
-        targets[int(all_values[0])] = 0.99
-        n.train(inputs, targets)
-        pass
-    pass
-
-
-n.store("config.pickle")
-
-n = neuralNetwork()
-n.load("config.pickle")
-
-# load the mnist test data CSV file into a list
-test_data_file = open("mnist_dataset/mnist_test_10.csv", 'r')
-test_data_list = test_data_file.readlines()
-test_data_file.close()
-
-
-# test the neural network
-
-# scorecard for how well the network performs, initially empty
-scorecard = []
-
-# go through all the records in the test data set
-for record in test_data_list:
-    # split the record by the ',' commas
-    all_values = record.split(',')
-    # correct answer is first value
-    correct_label = int(all_values[0])
-    # scale and shift the inputs
-    inputs = (numpy.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
-    # query the network
-    outputs = n.query(inputs)
-    # the index of the highest value corresponds to the label
-    label = numpy.argmax(outputs)
-    # append correct or incorrect to list
-    if (label == correct_label):
-        # network's answer matches correct answer, add 1 to scorecard
-        scorecard.append(1)
-    else:
-        # network's answer doesn't match correct answer, add 0 to scorecard
-        scorecard.append(0)
-        pass
-
-    pass
-
-
-# calculate the performance score, the fraction of correct answers
-scorecard_array = numpy.asarray(scorecard)
-print(("performance = ", scorecard_array.sum() / scorecard_array.size))
 
