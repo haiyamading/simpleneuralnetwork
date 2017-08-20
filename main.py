@@ -4,16 +4,28 @@
 # license is GPLv2
 
 import numpy
-import math
-
+import pickle
 
 def sigmoid(x):
   return 1 / (1 + numpy.exp(-x))
 
+
+activation_function = lambda x: sigmoid(x)
+
+
 # neural network class definition
 class neuralNetwork:
     # initialise the neural network
-    def __init__(self, inputnodes, hiddennodes, outputnodes, learningrate):
+    def __init__(self):
+        self.inodes = None
+        self.hnodes = None
+        self.onodes = None
+        self.wih = None
+        self.who = None
+        self.lr = None
+
+
+    def create(self, inputnodes, hiddennodes, outputnodes, learningrate):
         # set number of nodes in each input, hidden, output layer
         self.inodes = inputnodes
         self.hnodes = hiddennodes
@@ -30,7 +42,6 @@ class neuralNetwork:
         self.lr = learningrate
 
         # activation function is the sigmoid function
-        self.activation_function = lambda x: sigmoid(x)
 
         pass
 
@@ -43,12 +54,12 @@ class neuralNetwork:
         # calculate signals into hidden layer
         hidden_inputs = numpy.dot(self.wih, inputs)
         # calculate the signals emerging from hidden layer
-        hidden_outputs = self.activation_function(hidden_inputs)
+        hidden_outputs = activation_function(hidden_inputs)
 
         # calculate signals into final output layer
         final_inputs = numpy.dot(self.who, hidden_outputs)
         # calculate the signals emerging from final output layer
-        final_outputs = self.activation_function(final_inputs)
+        final_outputs = activation_function(final_inputs)
 
         # output layer error is the (target - actual)
         output_errors = targets - final_outputs
@@ -73,14 +84,28 @@ class neuralNetwork:
         # calculate signals into hidden layer
         hidden_inputs = numpy.dot(self.wih, inputs)
         # calculate the signals emerging from hidden layer
-        hidden_outputs = self.activation_function(hidden_inputs)
+        hidden_outputs = activation_function(hidden_inputs)
 
         # calculate signals into final output layer
         final_inputs = numpy.dot(self.who, hidden_outputs)
         # calculate the signals emerging from final output layer
-        final_outputs = self.activation_function(final_inputs)
+        final_outputs = activation_function(final_inputs)
 
         return final_outputs
+
+    def store(self, fname):
+        with open(fname, "wb") as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
+    def load(self, fname):
+        with open(fname, "rb") as f:
+            dump = pickle.load(f)
+            self.inodes = dump.inodes
+            self.hnodes = dump.hnodes
+            self.onodes = dump.onodes
+            self.wih    = dump.wih
+            self.who    = dump.who
+            self.lr     = dump.lr
 
 
 # number of input, hidden and output nodes
@@ -92,7 +117,8 @@ output_nodes = 10
 learning_rate = 0.1
 
 # create instance of neural network
-n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
+n = neuralNetwork()
+n.create(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
 # load the mnist training data CSV file into a list
 training_data_file = open("mnist_dataset/mnist_train_100.csv", 'r')
@@ -119,6 +145,11 @@ for e in range(epochs):
         pass
     pass
 
+
+n.store("config.pickle")
+
+n = neuralNetwork()
+n.load("config.pickle")
 
 # load the mnist test data CSV file into a list
 test_data_file = open("mnist_dataset/mnist_test_10.csv", 'r')
